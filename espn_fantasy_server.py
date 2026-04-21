@@ -6,15 +6,12 @@ import logging
 import traceback
 import os
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-
-# Add stderr logging for Claude Desktop to see
+# 1. Extremely simple logging to avoid startup crashes
 def log_error(message):
-    print(message, file=sys.stderr)
+    sys.stderr.write(f"{message}\n")
+    sys.stderr.flush()
 
-    # Initialize FastMCP server
-    log_error("Initializing FastMCP server...")
+# 2. Initialize MCP at the top level, but keep it simple
 mcp = FastMCP("espn-fantasy-football")
 
 # Constants
@@ -24,54 +21,26 @@ if datetime.datetime.now().month < 7:  # If before July, use previous year
 
 log_error(f"Using football year: {CURRENT_YEAR}")
 
+# 3. Wrap EVERYTHING else in a class or the main block
 class ESPNFantasyFootballAPI:
     def __init__(self):
-        self.leagues = {}  # Cache for league objects
-        # Store credentials separately per-session rather than globally
+        self.leagues = {}
         self.credentials = {}
     
-    def get_league(self, session_id, league_id, year=CURRENT_YEAR):
-        """Get a league instance with caching, using stored credentials if available"""
+    def get_league(self, session_id, league_id, year):
         key = f"{league_id}_{year}"
-        
-        # Check if we have credentials for this session
-        espn_s2 = None
-        swid = None
-        if session_id in self.credentials:
-            espn_s2 = self.credentials[session_id].get('espn_s2')
-            swid = self.credentials[session_id].get('swid')
-        
-        # Create league cache key including auth info
+        espn_s2 = self.credentials.get(session_id, {}).get('espn_s2')
+        swid = self.credentials.get(session_id, {}).get('swid')
         cache_key = f"{key}_{espn_s2}_{swid}"
         
         if cache_key not in self.leagues:
-            log_error(f"Creating new league instance for {league_id}, year {year}")
-            try:
-                self.leagues[cache_key] = League(league_id=league_id, year=year, espn_s2=espn_s2, swid=swid)
-            except Exception as e:
-                log_error(f"Error creating league: {str(e)}")
-                raise
-        
+            self.leagues[cache_key] = League(league_id=league_id, year=year, espn_s2=espn_s2, swid=swid)
         return self.leagues[cache_key]
     
     def store_credentials(self, session_id, espn_s2, swid):
-        """Store credentials for a session"""
-        self.credentials[session_id] = {
-            'espn_s2': espn_s2,
-            'swid': swid
-        }
-        log_error(f"Stored credentials for session {session_id}")
-    
-    def clear_credentials(self, session_id):
-        """Clear credentials for a session"""
-        if session_id in self.credentials:
-            del self.credentials[session_id]
-            log_error(f"Cleared credentials for session {session_id}")
+        self.credentials[session_id] = {'espn_s2': espn_s2, 'swid': swid}
 
-# Create our API instance
 api = ESPNFantasyFootballAPI()
-
-# Store a session map
 SESSION_ID = "default_session"
 
 @mcp.tool()
@@ -360,26 +329,25 @@ async def logout() -> str:
         return f"Error logging out: {str(e)}"
 
 if __name__ == "__main__":
-    # 1. Get credentials
-    espn_s2 = os.getenv("espn_s2") or os.getenv("ESPN_S2")
-    swid = os.getenv("swid") or os.getenv("SWID")
+    # Move year calculation inside main so it doesn't crash the import
+    now = datetime.datetime.now()
+    year = now.year if now.month >= 7 else now.year - 1
+    
+    # 4. Bind to PORT env var if it exists (Cloud Run requirement)
+    port = int(os.getenv("PORT", 8080))
+    
+    # 5. Pre-auth from secrets
+    s2 = os.getenv("espn_s2") or os.getenv("ESPN_S2")
+    sw = os.getenv("swid") or os.getenv("SWID")
+    if s2 and sw:
+        api.store_credentials(SESSION_ID, s2, sw)
 
-    if espn_s2 and swid:
-        log_error("Credentials found in environment. Pre-authenticating...")
-        api.store_credentials(SESSION_ID, espn_s2, swid)
-    else:
-        log_error("WARNING: No credentials found in environment variables.")
-
-    log_error("Starting MCP server on port 8080...")
-
-    # 2. RUN THE SERVER
-    try:    
-        mcp.run(
-            transport="sse", 
-            host="0.0.0.0",
-            port=8080
-        )
+    log_error(f"Starting server on port {port}...")
+    
+    try:
+        # 6. Use the most explicit run command possible
+        mcp.run(transport="sse", host="0.0.0.0", port=port)
     except Exception as e:
-        log_error(f"ERROR DURING SERVER INITIALIZATION: {str(e)}")
-        traceback.print_exc(file=sys.stderr)
+        log_error(f"CRITICAL SHUTDOWN: {e}")
+        traceback.print_exc()
         sys.exit(1)
