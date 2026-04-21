@@ -370,18 +370,13 @@ try:
             api.store_credentials(SESSION_ID, espn_s2, swid)
     	else:
             log_error("WARNING: No credentials found in environment variables.")
-	
 	# Run the server
-	log_error("Starting MCP server on port 8080...")
+        log_error("Starting MCP server on port 8080...")
         mcp.run(transport="sse", host="0.0.0.0", port=8080)
 
 except Exception as e:
     # Log any exception that might occur during server initialization
     log_error(f"ERROR DURING SERVER INITIALIZATION: {str(e)}")
     traceback.print_exc(file=sys.stderr)
-    # Keep the process running to see logs
-    log_error("Server failed to start, but kept running for logging. Press Ctrl+C to exit.")
-    # Wait indefinitely to keep the process alive for logs
-    import time
-    while True:
-        time.sleep(10)
+    # Exit with an error code so Cloud Run knows it failed immediately
+    sys.exit(1)
