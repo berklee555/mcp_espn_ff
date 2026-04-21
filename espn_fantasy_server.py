@@ -369,10 +369,12 @@ try:
             log_error("Credentials found in environment. Pre-authenticating...")
             api.store_credentials(SESSION_ID, espn_s2, swid)
     	else:
-            log_error("WARNING: No credentials found in environment variables.")# Run the server
-        
+            log_error("WARNING: No credentials found in environment variables.")
+	
+	# Run the server
 	log_error("Starting MCP server on port 8080...")
         mcp.run(transport="sse", host="0.0.0.0", port=8080)
+
 except Exception as e:
     # Log any exception that might occur during server initialization
     log_error(f"ERROR DURING SERVER INITIALIZATION: {str(e)}")
