@@ -13,7 +13,6 @@ logging.basicConfig(level=logging.INFO)
 def log_error(message):
     print(message, file=sys.stderr)
 
-try:
     # Initialize FastMCP server
     log_error("Initializing FastMCP server...")
     mcp = FastMCP("espn-fantasy-football")
@@ -373,9 +372,13 @@ try:
 
         log_error("Starting MCP server on port 8080...")
         # Ensure mcp.run is indented exactly like the lines above it
-        mcp.run(transport="sse", host="0.0.0.0", port=8080)
-
-except Exception as e:
-    log_error(f"ERROR DURING SERVER INITIALIZATION: {str(e)}")
-    traceback.print_exc(file=sys.stderr)
-    sys.exit(1)
+    try:    
+        mcp.run(
+            transport="sse", 
+            host="0.0.0.0",
+            port=8080
+        )
+    except Exception as e:
+        log_error(f"ERROR DURING SERVER INITIALIZATION: {str(e)}")
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
