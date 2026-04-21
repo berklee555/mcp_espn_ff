@@ -1,1 +1,1 @@
-web: uv run espn_fantasy_server.py dev --transport sse --port 8080
+web: uv run espn_fantasy_server.py --transport sse --host 0.0.0.0 --port 8080
