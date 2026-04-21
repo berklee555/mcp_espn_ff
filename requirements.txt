@@ -62,6 +62,7 @@ colorama==0.4.6 ; sys_platform == 'win32' \
 espn-api==0.44.1 \
     --hash=sha256:155ac70f4a920c86dde962326894fe38bba8612053b879dd5fe7082cb57ec25c
     # via mcp-espn-ff
+fastmcp \
 h11==0.14.0 \
     --hash=sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d \
     --hash=sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761
