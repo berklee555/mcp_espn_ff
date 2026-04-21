@@ -361,22 +361,21 @@ try:
             return f"Error logging out: {str(e)}"
 
     if __name__ == "__main__":
-        # Get credentials from Cloud Run Environment Variables (populated by your Secrets)
-    	espn_s2 = os.getenv("espn_s2") or os.getenv("ESPN_S2")
-    	swid = os.getenv("swid") or os.getenv("SWID")
+        # Use 4 spaces for all indentation here
+        espn_s2 = os.getenv("espn_s2") or os.getenv("ESPN_S2")
+        swid = os.getenv("swid") or os.getenv("SWID")
 
-    	if espn_s2 and swid:
+        if espn_s2 and swid:
             log_error("Credentials found in environment. Pre-authenticating...")
             api.store_credentials(SESSION_ID, espn_s2, swid)
-    	else:
+        else:
             log_error("WARNING: No credentials found in environment variables.")
-	# Run the server
+
         log_error("Starting MCP server on port 8080...")
+        # Ensure mcp.run is indented exactly like the lines above it
         mcp.run(transport="sse", host="0.0.0.0", port=8080)
 
 except Exception as e:
-    # Log any exception that might occur during server initialization
     log_error(f"ERROR DURING SERVER INITIALIZATION: {str(e)}")
     traceback.print_exc(file=sys.stderr)
-    # Exit with an error code so Cloud Run knows it failed immediately
     sys.exit(1)
