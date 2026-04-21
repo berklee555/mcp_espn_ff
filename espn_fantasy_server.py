@@ -4,6 +4,7 @@ import sys
 import datetime
 import logging
 import traceback
+import os
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -360,9 +361,18 @@ try:
             return f"Error logging out: {str(e)}"
 
     if __name__ == "__main__":
-        # Run the server
-        log_error("Starting MCP server...")
-        mcp.run()
+        # Get credentials from Cloud Run Environment Variables (populated by your Secrets)
+    	espn_s2 = os.getenv("espn_s2") or os.getenv("ESPN_S2")
+    	swid = os.getenv("swid") or os.getenv("SWID")
+
+    	if espn_s2 and swid:
+            log_error("Credentials found in environment. Pre-authenticating...")
+            api.store_credentials(SESSION_ID, espn_s2, swid)
+    	else:
+            log_error("WARNING: No credentials found in environment variables.")# Run the server
+        
+	log_error("Starting MCP server on port 8080...")
+        mcp.run(transport="sse", host="0.0.0.0", port=8080)
 except Exception as e:
     # Log any exception that might occur during server initialization
     log_error(f"ERROR DURING SERVER INITIALIZATION: {str(e)}")
